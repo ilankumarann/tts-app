@@ -2,16 +2,53 @@
 <html>
     <head>
         <title>TTS Demo</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                margin: 0;
+                padding: 0;
+            }
+            header {
+                background-color: #333;
+                color: white;
+                padding: 10px 20px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+            h1 {
+                margin: 0;
+            }
+            #backendSelect {
+                margin-left: auto;
+            }
+            form {
+                margin: 20px auto;
+                width: 80%;
+                max-width: 600px;
+                text-align: center;
+            }
+            input[type="text"] {
+                width: 100%;
+                padding: 10px;
+                margin: 10px 0;
+                box-sizing: border-box;
+            }
+            button {
+                padding: 10px 20px;
+                font-size: 16px;
+            }
+        </style>
     </head>
     <body>
-        <h1>TTS Demo Set</h1>
-        <form action="" onsubmit="sendMessage(event)">
-            <label for="backendSelect">Select TTS Backend:</label>
+        <header>
+            <h1>TTS Demo</h1>
+            
             <select id="backendSelect">
                 <!-- Options will be populated by JavaScript -->
             </select>
-            <br>
-            <hr>
+        </header>
+        <form action="" onsubmit="sendMessage(event)">
             <label for="messageText">Enter Text:</label>
             <input type="text" id="messageText" autocomplete="off"/>
             <button>Send</button>
