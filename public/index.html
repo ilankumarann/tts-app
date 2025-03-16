@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>TTS Demo</title>
+    </head>
+    <body>
+        <h1>TTS Demo Set</h1>
+        <form action="" onsubmit="sendMessage(event)">
+            <label for="backendSelect">Select TTS Backend:</label>
+            <select id="backendSelect">
+                <!-- Options will be populated by JavaScript -->
+            </select>
+            <br>
+            <hr>
+            <label for="messageText">Enter Text:</label>
+            <input type="text" id="messageText" autocomplete="off"/>
+            <button>Send</button>
+        </form>
+        <ul id='messages'>
+        </ul>
+        <script>
+            async function fetchBackends() {
+                const response = await fetch('/api/backends');
+                const backends = await response.json();
+                const backendSelect = document.getElementById('backendSelect');
+                backends.forEach(backend => {
+                    const option = document.createElement('option');
+                    option.value = backend;
+                    option.text = backend;
+                    backendSelect.appendChild(option);
+                });
+            }
+
+            fetchBackends();
+
+            var ws = new WebSocket("ws://localhost:8000/ws");
+            ws.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                const messages = document.getElementById('messages');
+                const message = document.createElement('li');
+                const content = document.createTextNode(data.text);
+                message.appendChild(content);
+                messages.appendChild(message);
+
+                const audioBuffer = base64ToArrayBuffer(data.audio);
+                const int16Buffer = float32ToInt16(audioBuffer);
+                const wavBlob = createWavBlob(int16Buffer, data.samplingRate, data.numChannels);
+                const audioUrl = URL.createObjectURL(wavBlob);
+                const audio = new Audio(audioUrl);
+                audio.play();
+            };
+
+            function sendMessage(event) {
+                const input = document.getElementById("messageText");
+                const backendSelect = document.getElementById("backendSelect");
+                const message = {
+                    text: input.value,
+                    backend: backendSelect.value
+                };
+                ws.send(JSON.stringify(message));
+                input.value = '';
+                event.preventDefault();
+            }
+
+            function base64ToArrayBuffer(base64) {
+                const binaryString = atob(base64);
+                const len = binaryString.length;
+                const bytes = new Uint8Array(len);
+                for (let i = 0; i < len; i++) {
+                    bytes[i] = binaryString.charCodeAt(i);
+                }
+                return bytes.buffer;
+            }
+
+            function float32ToInt16(buffer) {
+                const float32Array = new Float32Array(buffer);
+                const int16Array = new Int16Array(float32Array.length);
+                for (let i = 0; i < float32Array.length; i++) {
+                    int16Array[i] = Math.max(-1, Math.min(1, float32Array[i])) * 0x7FFF;
+                }
+                return int16Array.buffer;
+            }
+
+            function createWavBlob(buffer, sampleRate, numChannels) {
+                const wavHeader = new ArrayBuffer(44);
+                const view = new DataView(wavHeader);
+
+                // RIFF identifier
+                writeString(view, 0, 'RIFF');
+                // file length minus RIFF identifier length and file description length
+                view.setUint32(4, 32 + buffer.byteLength, true);
+                // RIFF type
+                writeString(view, 8, 'WAVE');
+                // format chunk identifier
+                writeString(view, 12, 'fmt ');
+                // format chunk length
+                view.setUint32(16, 16, true);
+                // sample format (raw)
+                view.setUint16(20, 1, true);
+                // channel count
+                view.setUint16(22, numChannels, true);
+                // sample rate
+                view.setUint32(24, sampleRate, true);
+                // byte rate (sample rate * block align)
+                view.setUint32(28, sampleRate * numChannels * 2, true);
+                // block align (channel count * bytes per sample)
+                view.setUint16(32, numChannels * 2, true);
+                // bits per sample
+                view.setUint16(34, 16, true);
+                // data chunk identifier
+                writeString(view, 36, 'data');
+                // data chunk length
+                view.setUint32(40, buffer.byteLength, true);
+
+                return new Blob([wavHeader, buffer], { type: 'audio/wav' });
+            }
+
+            function writeString(view, offset, string) {
+                for (let i = 0; i < string.length; i++) {
+                    view.setUint8(offset + i, string.charCodeAt(i));
+                }
+            }
+        </script>
+    </body>
+</html>
