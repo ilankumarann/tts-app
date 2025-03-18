@@ -7,9 +7,11 @@ from types import GeneratorType
 class TTSEngine:
     def __init__(self, backend_name: str):
         self.backend_name = backend_name
+        #Defaults
         self.sampling_rate = 16000
-        self.backend = self.initialize_backend(backend_name)
         self.stream = False
+        self.backend = self.initialize_backend(backend_name)
+        
         
     def get_available_backends(self):
         return ["speecht5", "bark", "parler", "kokoro"]
@@ -32,9 +34,12 @@ class TTSEngine:
             raise ValueError(f"Unsupported backend: {backend_name}")
         
     def convert_text_to_audio(self, text):
+         if self.stream:
+             return self.backend.stream_text_to_audio(text)
+         
          return self.backend.convert_text_to_audio(text)
 
-        
+   
 
     # def run(self):
     #     while not self.terminate.is_set():

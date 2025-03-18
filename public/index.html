@@ -43,7 +43,6 @@
     <body>
         <header>
             <h1>TTS Demo</h1>
-            
             <select id="backendSelect">
                 <!-- Options will be populated by JavaScript -->
             </select>
@@ -71,6 +70,9 @@
             fetchBackends();
 
             var ws = new WebSocket("ws://localhost:8000/ws");
+            var audioQueue = [];
+            var isPlaying = false;
+
             ws.onmessage = function(event) {
                 const data = JSON.parse(event.data);
                 const messages = document.getElementById('messages');
@@ -84,8 +86,24 @@
                 const wavBlob = createWavBlob(int16Buffer, data.samplingRate, data.numChannels);
                 const audioUrl = URL.createObjectURL(wavBlob);
                 const audio = new Audio(audioUrl);
-                audio.play();
+
+                audioQueue.push(audio);
+                playNextAudio();
             };
+
+            function playNextAudio() {
+                if (isPlaying || audioQueue.length === 0) {
+                    return;
+                }
+
+                isPlaying = true;
+                const audio = audioQueue.shift();
+                audio.onended = function() {
+                    isPlaying = false;
+                    playNextAudio();
+                };
+                audio.play();
+            }
 
             function sendMessage(event) {
                 const input = document.getElementById("messageText");

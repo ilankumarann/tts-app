@@ -13,6 +13,10 @@ class BaseTTSEngine(ABC):
     def convert_text_to_audio(text:str):
         pass
     
+    @abstractmethod
+    def stream_text_to_audio(text:str):
+        pass
+    
     # def input_pre_processor(self, text):
     #     """
     #     Pre-process the input text before passing it to the model

@@ -6,9 +6,10 @@ from tts_engine import TTSEngine
 import logging
 import coloredlogs
 from fastapi.staticfiles import StaticFiles
-import sounddevice as sd
+# import sounddevice as sd
 from datetime import datetime
 from types import GeneratorType
+import uvicorn
 
 logger = logging.getLogger("Throatpain")
 log_format = "%(levelname)s:%(asctime)s:%(name)s: %(message)s"
@@ -78,9 +79,7 @@ async def handle_message(websocket:WebSocket, input:str|dict):
         dt = datetime.now()
         if isinstance(result, GeneratorType):
             if tts_engine.backend_name == "kokoro":
-                for i, (_,_,audio) in enumerate(result):
-                    audio_bytes = audio.to("cpu").squeeze().numpy()
-                    logger.info(f"output index {i}")
+                for audio_bytes in result:
                     await websocket.send_json(
                         prepare_audio_response(audio_bytes,tts_engine.sampling_rate, 1, text, session_id=session_id)
                     )
@@ -109,4 +108,6 @@ async def websocket_endpoint(websocket: WebSocket):
         manager.disconnect(websocket)
         await manager.broadcast("A client disconnected")
     
-        
+
+if __name__ == "__main__":
+   uvicorn.run(app, host="0.0.0.0", port=8000)      
