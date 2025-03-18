@@ -2,14 +2,17 @@ from queue import Queue, Empty
 from threading import Thread, Event
 import logging
 logging.basicConfig(level=logging.DEBUG)
+from types import GeneratorType
 
 class TTSEngine:
     def __init__(self, backend_name: str):
         self.backend_name = backend_name
+        self.sampling_rate = 16000
         self.backend = self.initialize_backend(backend_name)
+        self.stream = False
         
     def get_available_backends(self):
-        return ["speecht5", "bark", "parler"]
+        return ["speecht5", "bark", "parler", "kokoro"]
     
     def initialize_backend(self, backend_name: str):
         # Initialize the backend based on the backend_name
@@ -18,13 +21,20 @@ class TTSEngine:
             return SpeechT5Backend()
         elif backend_name == "bark":
             raise NotImplementedError("Bark is not yet supported")
+        elif backend_name == "kokoro":
+            from engines.kokoro_tts import KokoroTTS
+            self.stream = True
+            self.sampling_rate = 24000
+            return KokoroTTS()
         elif backend_name == "parler":
             raise NotImplementedError("Parler TTS is not yet implemented")
         else:
             raise ValueError(f"Unsupported backend: {backend_name}")
         
     def convert_text_to_audio(self, text):
-        return self.backend.convert_text_to_audio(text)
+         return self.backend.convert_text_to_audio(text)
+
+        
 
     # def run(self):
     #     while not self.terminate.is_set():
