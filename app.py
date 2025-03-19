@@ -40,7 +40,7 @@ manager = ConnectionManager()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global tts_engine
-    tts_engine = TTSEngine(backend_name="speecht5")
+    tts_engine = TTSEngine(backend_name="kokoro")
     yield
     tts_engine = None
 
