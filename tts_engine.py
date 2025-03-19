@@ -33,11 +33,11 @@ class TTSEngine:
         else:
             raise ValueError(f"Unsupported backend: {backend_name}")
         
-    def convert_text_to_audio(self, text):
-         if self.stream:
-             return self.backend.stream_text_to_audio(text)
+    def convert_text_to_audio(self, text, stream):
+        if stream:
+            return self.backend.stream_text_to_audio(text)
          
-         return self.backend.convert_text_to_audio(text)
+        return self.backend.convert_text_to_audio(text)
 
    
 

@@ -1,5 +1,6 @@
 import base64
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request
+from fastapi import Body
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from contextlib import asynccontextmanager
@@ -39,7 +40,7 @@ manager = ConnectionManager()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global tts_engine
-    tts_engine = TTSEngine(backend_name="kokoro")
+    tts_engine = TTSEngine(backend_name="speecht5")
     yield
     tts_engine = None
 
@@ -56,6 +57,15 @@ async def get(request: Request):
 async def backends():
     backends = tts_engine.get_available_backends()
     return JSONResponse(backends)
+
+@app.post("/api/convert")
+def convert_text_audio(payload: dict = Body(...)):
+    text = payload.get("text")
+    if not text:
+        return JSONResponse({"error": "Text field is required"}, status_code=400)
+    aud =  tts_engine.convert_text_to_audio(text, stream=False)
+    return prepare_audio_response(aud, tts_engine.sampling_rate, 1, text)
+
 
 def prepare_audio_response(audio, sample_rate, num_channels, text, session_id=None):
     audio_base64 = base64.b64encode(audio).decode('utf-8')
@@ -82,7 +92,8 @@ async def handle_message(websocket:WebSocket, input:str|dict):
     if text:
         logging.debug(f"Converting text {text}")
         st = datetime.now()
-        result = tts_engine.convert_text_to_audio(text)
+        #Websockets can handle streaming so lets go by what the engine say
+        result = tts_engine.convert_text_to_audio(text, tts_engine.stream)
         dt = datetime.now()
         if isinstance(result, GeneratorType):
             if tts_engine.backend_name == "kokoro":

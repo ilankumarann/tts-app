@@ -26,4 +26,7 @@ class SpeechT5Backend(BaseTTSEngine):
         speaker_embeddings = speaker_embeddings.to(self.device)
         speech = self.model.generate_speech(inputs["input_ids"], speaker_embeddings, vocoder=self.vocoder)
         speech = speech.to("cpu").squeeze().numpy()
-        return speech, SAMPLING_RATE
+        return speech
+    
+    def stream_text_to_audio(text):
+        raise NotImplementedError("Speect5 doesnt support streaming yet")
