@@ -1,6 +1,7 @@
 import base64
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request
 from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.templating import Jinja2Templates
 from contextlib import asynccontextmanager
 from tts_engine import TTSEngine
 import logging
@@ -11,7 +12,7 @@ from datetime import datetime
 from types import GeneratorType
 import uvicorn
 
-logger = logging.getLogger("Throatpain")
+logger = logging.getLogger("TTS Demo App")
 log_format = "%(levelname)s:%(asctime)s:%(name)s: %(message)s"
 coloredlogs.install(level='DEBUG', logger=logger, fmt=log_format)
 
@@ -43,7 +44,13 @@ async def lifespan(app: FastAPI):
     tts_engine = None
 
 app = FastAPI(lifespan=lifespan)
-app.mount("/html", StaticFiles(directory="public"), name="static")
+app.mount("/static", StaticFiles(directory="public"), name="static")
+
+templates = Jinja2Templates(directory="templates")
+
+@app.get("/", response_class=HTMLResponse)
+async def get(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request})
 
 @app.get("/api/backends")
 async def backends():

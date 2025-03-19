@@ -2,43 +2,7 @@
 <html>
     <head>
         <title>TTS Demo</title>
-        <style>
-            body {
-                font-family: Arial, sans-serif;
-                margin: 0;
-                padding: 0;
-            }
-            header {
-                background-color: #333;
-                color: white;
-                padding: 10px 20px;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-            }
-            h1 {
-                margin: 0;
-            }
-            #backendSelect {
-                margin-left: auto;
-            }
-            form {
-                margin: 20px auto;
-                width: 80%;
-                max-width: 600px;
-                text-align: center;
-            }
-            input[type="text"] {
-                width: 100%;
-                padding: 10px;
-                margin: 10px 0;
-                box-sizing: border-box;
-            }
-            button {
-                padding: 10px 20px;
-                font-size: 16px;
-            }
-        </style>
+        <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='/styles.css') }}">
     </head>
     <body>
         <header>
@@ -48,9 +12,14 @@
             </select>
         </header>
         <form action="" onsubmit="sendMessage(event)">
-            <label for="messageText">Enter Text:</label>
-            <input type="text" id="messageText" autocomplete="off"/>
-            <button>Send</button>
+            <div class="form-row">
+                <label for="messageText">Enter Text:</label>
+                <div id="statusIndicator" class="status-indicator status-disconnected"></div>
+            </div>
+            <div class="form-row">
+                <input type="text" id="messageText" autocomplete="off" placeholder="not ready now! press the refresh button"/>
+                <button>Send</button>
+            </div>
         </form>
         <ul id='messages'>
         </ul>
@@ -69,9 +38,23 @@
 
             fetchBackends();
 
-            var ws = new WebSocket("ws://localhost:8000/ws");
+            const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${wsProtocol}//${window.location.host}/ws`;
+            var ws = new WebSocket(wsUrl);
             var audioQueue = [];
             var isPlaying = false;
+
+            ws.onopen = function() {
+                document.getElementById('statusIndicator').classList.remove('status-disconnected');
+                document.getElementById('statusIndicator').classList.add('status-connected');
+                document.getElementById('messageText').placeholder = '';
+            };
+
+            ws.onclose = function() {
+                document.getElementById('statusIndicator').classList.remove('status-connected');
+                document.getElementById('statusIndicator').classList.add('status-disconnected');
+                document.getElementById('messageText').placeholder = 'not ready now! press the refresh button';
+            };
 
             ws.onmessage = function(event) {
                 const data = JSON.parse(event.data);
